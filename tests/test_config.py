@@ -10,7 +10,7 @@ from app.config import Config, load_or_scaffold
 def test_load_valid_config(tmp_path, valid_config_dict):
     p = tmp_path / "config.yml"
     p.write_text(yaml.dump(valid_config_dict))
-    cfg = load_or_scaffold(str(p))
+    cfg, _ = load_or_scaffold(str(p))
     assert cfg.instapaper.username == "test@example.com"
     assert cfg.schedule == "*/30 * * * *"
     assert len(cfg.feeds) == 1
@@ -65,5 +65,5 @@ def test_env_override_log_level(tmp_path, valid_config_dict, monkeypatch):
     p = tmp_path / "config.yml"
     p.write_text(yaml.dump(valid_config_dict))
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
-    cfg = load_or_scaffold(str(p))
+    cfg, _ = load_or_scaffold(str(p))
     assert cfg.settings.log_level == "DEBUG"
