@@ -11,15 +11,8 @@ from tenacity import (
 
 logger = logging.getLogger(__name__)
 
+_SIMPLE_API_URL = "https://www.instapaper.com/api/add"
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
-
-
-class InstapaperAuthError(Exception):
-    pass
-
-
-class InstapaperAPIError(Exception):
-    pass
 
 
 def _is_retryable(exc: BaseException) -> bool:
@@ -31,9 +24,11 @@ def _is_retryable(exc: BaseException) -> bool:
     return False
 
 
-class InstapaperClient:
-    _API_URL = "https://www.instapaper.com/api/add"
+class InstapaperAuthError(Exception):
+    pass
 
+
+class InstapaperClient:
     def __init__(self, username: str, password: str):
         self._session = requests.Session()
         self._session.auth = (username, password)
@@ -49,12 +44,9 @@ class InstapaperClient:
         data = {"url": url}
         if title:
             data["title"] = title
-
-        response = self._session.post(self._API_URL, data=data, timeout=timeout)
-
-        if response.status_code == 403:
-            raise InstapaperAuthError("Instapaper returned 403 — check credentials")
-        if response.status_code in (200, 201):
+        resp = self._session.post(_SIMPLE_API_URL, data=data, timeout=timeout)
+        if resp.status_code == 403:
+            raise InstapaperAuthError("Instapaper returned 403 — check username/password")
+        if resp.status_code in (200, 201):
             return
-        if response.status_code >= 400:
-            response.raise_for_status()
+        resp.raise_for_status()

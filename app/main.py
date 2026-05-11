@@ -1,12 +1,12 @@
 import logging
 import os
 import signal
-import sqlite3
 import sys
 
 from . import config as config_module
 from . import db as db_module
 from . import scheduler as scheduler_module
+from .archive import bootstrap_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,16 @@ def main() -> None:
     config_path = os.getenv("CONFIG_PATH", "/app/config/config.yml")
     db_path = os.getenv("DB_PATH", "/app/data/instarss.db")
 
-    cfg = config_module.load_or_scaffold(config_path)
+    cfg, raw = config_module.load_or_scaffold(config_path)
 
     _configure_logging(cfg.settings.log_level)
+
+    if cfg.instapaper.archive_enabled() and not cfg.instapaper.has_tokens():
+        try:
+            bootstrap_tokens(cfg, raw, config_path)
+        except Exception as exc:
+            logger.critical("OAuth token bootstrap failed: %s", exc)
+            sys.exit(1)
 
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     db_conn = db_module.init_db(db_path)
@@ -35,15 +42,14 @@ def main() -> None:
     scheduler = scheduler_module.build_scheduler(cfg, db_conn)
 
     enabled_count = sum(1 for f in cfg.feeds if f.enabled)
+    archive_status = f"archive every {cfg.settings.archive_after_days}d" if cfg.instapaper.archive_enabled() else "archive disabled"
     logger.info(
-        "instarss starting — schedule: %s | feeds: %d enabled | db: %s",
-        cfg.schedule,
-        enabled_count,
-        db_path,
+        "instarss starting — schedule: %s | feeds: %d enabled | %s",
+        cfg.schedule, enabled_count, archive_status,
     )
 
     def _shutdown(signum: int, frame: object) -> None:
-        logger.info("Shutdown signal received, stopping scheduler…")
+        logger.info("Shutdown signal received, stopping scheduler...")
         scheduler.shutdown(wait=False)
         db_conn.close()
         sys.exit(0)
