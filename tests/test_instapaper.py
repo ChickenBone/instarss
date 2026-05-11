@@ -1,7 +1,7 @@
 import requests
 import responses as responses_lib
 
-from app.instapaper import InstapaperClient, InstapaperAuthError, InstapaperAPIError
+from app.instapaper import InstapaperClient, InstapaperAuthError
 
 API_URL = "https://www.instapaper.com/api/add"
 
