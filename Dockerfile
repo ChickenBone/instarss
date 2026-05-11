@@ -13,7 +13,10 @@ COPY app/ ./app/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-RUN mkdir -p /app/config /app/data
+# Create user at build time — entrypoint remaps UID/GID at runtime via usermod/groupmod
+RUN groupadd -g 1000 appuser \
+    && useradd -u 1000 -g 1000 --no-create-home appuser \
+    && mkdir -p /app/config /app/data
 
 ENV PYTHONUNBUFFERED=1
 ENV CONFIG_PATH=/app/config/config.yml

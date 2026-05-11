@@ -1,4 +1,4 @@
-# instarss
+# instarss **AI SLOP ALERT**
 
 Polls RSS/Atom feeds on a cron schedule and saves new items to your [Instapaper](https://www.instapaper.com) account. Runs as a Docker container, configured via a single YAML file.
 
@@ -15,25 +15,15 @@ Polls RSS/Atom feeds on a cron schedule and saves new items to your [Instapaper]
 
 ## Quick Start
 
-### 1. Create the working directories
+### 1. Scaffold the config
+
+Run once — the container writes `config/config.yml` then exits:
 
 ```bash
-mkdir -p config data
+docker compose up
 ```
 
-### 2. Scaffold the config
-
-Run once to generate `config/config.yml`:
-
-```bash
-docker run --rm \
-  -v "$(pwd)/config:/app/config" \
-  ghcr.io/<your-username>/instarss:latest
-```
-
-The container exits and writes a template to `config/config.yml`.
-
-### 3. Edit the config
+### 2. Edit `config/config.yml`
 
 ```yaml
 instapaper:
@@ -46,27 +36,21 @@ feeds:
   - name: "Hacker News Best"
     url: "https://hnrss.org/best"
     enabled: true
-  - name: "My Blog"
-    url: "https://example.com/feed.xml"
-    enabled: true
 
 settings:
-  max_items_per_run: 20  # max new items submitted per feed per run
-  backfill_days: 7       # ignore items older than this (0 = no limit)
+  max_items_per_run: 20
+  backfill_days: 7
   request_timeout: 30
   log_level: "INFO"
 ```
 
-### 4. Run with Docker Compose
-
-Set your GitHub username and start the service:
+### 3. Start the service
 
 ```bash
-export GITHUB_USER=your-username
 docker compose up -d
 ```
 
-The service runs in the background with `restart: unless-stopped`. Logs:
+Logs:
 
 ```bash
 docker compose logs -f
@@ -128,12 +112,18 @@ The workflow (`.github/workflows/docker-publish.yml`) runs tests first and only 
 
 ## Data Persistence
 
-| Path (container) | Host mount | Contents |
-|-----------------|------------|----------|
-| `/app/config/config.yml` | `./config/config.yml` | Your configuration |
-| `/app/data/instarss.db` | `./data/instarss.db` | SQLite state (processed item GUIDs) |
+| Host path | Container path | Contents |
+|-----------|---------------|----------|
+| `./config/config.yml` | `/app/config/config.yml` | Your configuration |
+| `./data/instarss.db` | `/app/data/instarss.db` | SQLite state (processed item GUIDs) |
 
-To reset state and reprocess all feeds, delete `data/instarss.db`.
+The entrypoint chowns both directories to `PUID:PGID` on startup, so Docker-created root-owned directories are fixed automatically.
+
+To reset state and reprocess all feeds:
+
+```bash
+rm data/instarss.db && docker compose restart
+```
 
 ## Running Tests
 
