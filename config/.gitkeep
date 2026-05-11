@@ -1,0 +1,2 @@
+# config.yml is created here at runtime (volume mount point).
+# It is git-ignored. On first container start, instarss scaffolds it automatically.

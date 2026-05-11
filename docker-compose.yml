@@ -1,0 +1,19 @@
+services:
+  instarss:
+    image: ghcr.io/${GITHUB_USER}/instarss:latest
+    # For local development, replace the image line above with:
+    #   build: .
+    container_name: instarss
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    environment:
+      - TZ=UTC
+      # Uncomment to override log level without editing config.yml:
+      # - LOG_LEVEL=DEBUG
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-files: "3"
