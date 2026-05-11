@@ -9,10 +9,7 @@ services:
       - ./config:/app/config
       - ./data:/app/data
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=UTC
-      # Uncomment to override log level without editing config.yml:
       # - LOG_LEVEL=DEBUG
     logging:
       driver: "json-file"
